@@ -137,13 +137,17 @@ pub async fn poll_session(
             };
 
             if let Some(ref receiver) = session.receiver {
-                if session.status == SessionStatus::Connected {
-                    return ok_json(json!({
-                        "receiver_public_key": receiver.public_key,
-                        "receiver_addr": receiver.addr,
-                        "receiver_fingerprint": session.receiver_fingerprint,
-                    }));
-                }
+                let status_str = match session.status {
+                    SessionStatus::AwaitingApproval => "awaiting_approval",
+                    SessionStatus::Connected => "connected",
+                    _ => continue,
+                };
+                return ok_json(json!({
+                    "status": status_str,
+                    "receiver_public_key": receiver.public_key,
+                    "receiver_addr": receiver.addr,
+                    "receiver_fingerprint": session.receiver_fingerprint,
+                }));
             }
         }
 

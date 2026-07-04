@@ -14,6 +14,7 @@ pub struct PeerInfo {
 
 #[derive(Debug, Clone)]
 pub struct PollResult {
+    pub status: String,
     pub receiver: Option<PeerInfo>,
     pub receiver_fingerprint: Option<String>,
 }
@@ -116,6 +117,11 @@ impl SessionManager {
 
         let body: serde_json::Value = resp.json().await?;
 
+        let status = body["status"]
+            .as_str()
+            .unwrap_or("connected")
+            .to_string();
+
         let receiver = body.get("receiver_public_key").and_then(|k| {
             k.as_str().map(|pk| PeerInfo {
                 public_key: pk.to_string(),
@@ -127,6 +133,7 @@ impl SessionManager {
         });
 
         Ok(Some(PollResult {
+            status,
             receiver,
             receiver_fingerprint: body["receiver_fingerprint"]
                 .as_str()
@@ -201,8 +208,10 @@ impl SessionManager {
                 return Err(SessionError::Timeout);
             }
 
-            if self.poll_session(code).await?.is_some() {
-                return Ok(());
+            if let Some(result) = self.poll_session(code).await? {
+                if result.status == "connected" {
+                    return Ok(());
+                }
             }
 
             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
