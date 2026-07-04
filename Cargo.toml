@@ -1,0 +1,72 @@
+[package]
+name = "project-white"
+version = "0.1.0"
+edition = "2021"
+description = "Secure peer-to-peer folder transfer"
+authors = ["Project White Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/project-white/pw"
+
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Cryptography
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+chacha20poly1305 = "0.10"
+hkdf = "0.12"
+sha2 = "0.10"
+blake3 = "1"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+rand = "0.8"
+rand_core = "0.6"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Encoding
+base64 = "0.22"
+hex = "0.4"
+uuid = { version = "1", features = ["v4"] }
+
+# Error handling
+thiserror = "1"
+
+# HTTP server (signaling server)
+axum = { version = "0.8", features = ["tokio"] }
+tower-http = { version = "0.6", features = ["cors"] }
+tower = "0.5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP client (CLI → signaling server)
+reqwest = { version = "0.12", features = ["json"] }
+
+# Date/time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Memory locking (optional — best-effort)
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3"
+reqwest = { version = "0.12", features = ["json"] }
+
+[[bin]]
+name = "pw"
+path = "src/main.rs"
+
+[[bin]]
+name = "pw-server"
+path = "src/bin/server.rs"
+
+[profile.release]
+opt-level = 2
+lto = true
+strip = true
+codegen-units = 1
