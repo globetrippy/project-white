@@ -36,6 +36,9 @@ uuid = { version = "1", features = ["v4"] }
 # Error handling
 thiserror = "1"
 
+# File system
+walkdir = "2"
+
 # HTTP server (signaling server)
 axum = { version = "0.8", features = ["tokio"] }
 tower-http = { version = "0.6", features = ["cors"] }

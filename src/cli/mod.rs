@@ -33,12 +33,17 @@ pub enum Command {
         chunk_size: usize,
 
         /// Idle timeout in seconds.
-        #[arg(long, default_value_t = 30, env = "PW_TIMEOUT")]
+        #[arg(long, default_value_t = 120, env = "PW_TIMEOUT")]
         timeout: u64,
 
         /// Skip interactive confirmation when receiver connects.
         #[arg(long, default_value_t = false)]
         yes: bool,
+
+        /// Public IP address for the receiver to connect to.
+        /// Required if sender is behind NAT.
+        #[arg(long, env = "PW_PUBLIC_IP")]
+        public_ip: Option<String>,
     },
 
     /// Receive a folder from a sender.

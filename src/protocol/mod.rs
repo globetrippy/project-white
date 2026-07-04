@@ -194,6 +194,27 @@ impl HandshakeAckPayload {
     }
 }
 
+/// Payload carried by `Manifest` (0x04).
+///
+/// Contains the encrypted manifest JSON (file list + root hash).
+/// No additional framing needed — the entire payload is the
+/// encrypted manifest bytes.
+pub struct ManifestPayload {
+    pub data: Vec<u8>,
+}
+
+impl ManifestPayload {
+    pub fn encode(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+
+    pub fn decode(data: &[u8]) -> Self {
+        Self {
+            data: data.to_vec(),
+        }
+    }
+}
+
 /// Payload carried by `HandshakeDone` (0x03).
 pub struct HandshakeDonePayload {
     /// First 8 bytes of BLAKE3(shared_secret || "pw-v1-verify")
