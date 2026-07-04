@@ -5,7 +5,6 @@ RUN apk add --no-cache musl-dev pkgconfig
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-COPY tests ./tests
 
 RUN cargo build --release --bin pw-server && \
     cp target/release/pw-server /pw-server
