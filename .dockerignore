@@ -1,0 +1,11 @@
+/target
+.git
+.gitignore
+.DS_Store
+*.swp
+*.swo
+deploy/
+docs/
+adr/
+README.md
+LICENSE-MIT

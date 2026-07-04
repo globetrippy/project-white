@@ -1,20 +1,36 @@
 # Deployment Guide
 
-## 1. GitHub — Private Repository
+## Choose a Provider
 
-1. Go to https://github.com and create a free account.
-2. Click **+** → **New repository**.
-3. Name: `project-white` (or `pw`).
-4. Set to **Private**.
-5. Do NOT initialize with README (we already have one).
-6. Click **Create repository**.
-7. Share the repo URL with me (e.g., `https://github.com/youruser/project-white.git`).
-
-I will push all the code.
+- **Koyeb** (recommended) — No credit card required, forever free
+- **Oracle Cloud** — Alternative, requires credit card
 
 ---
 
-## 2. Oracle Cloud — Free Tier VM
+## Option A: Koyeb (No Credit Card Required)
+
+1. Go to https://app.koyeb.com and sign up (no credit card needed).
+2. Click **Create App**.
+3. Connect your GitHub account and select the `project-white` private repo.
+4. Builder: **Dockerfile** (auto-detected).
+5. Port: **8080**.
+6. Region: Choose the closest to you.
+7. Health check path: `/health`.
+8. Click **Create**.
+
+Koyeb will build and deploy automatically. Your server URL will be `https://pw-project-white-name.koyeb.app`.
+
+Set the client environment variable:
+```bash
+export PW_SERVER=https://pw-project-white-name.koyeb.app
+pw send ./my-project
+```
+
+> **Note:** Koyeb free tier auto-sleeps on zero traffic. The first request after idle may take <500ms to wake up.
+
+---
+
+## Option B: Oracle Cloud — Free Tier VM
 
 1. Go to https://cloud.oracle.com and sign up for **Free Tier**.
    - Requires a credit card for identity verification (no charges).
@@ -28,31 +44,32 @@ I will push all the code.
    - **Boot volume:** 100 GB (always free)
 4. Click **Create**.
 5. After creation, note the **Public IP address**.
-6. Share the public IP and SSH private key with me.
 
-**Security List:** By default, port 8080 is open. We'll use port 443 with TLS.
+**Security List:** Open port 8080 and 443.
+
+Run the setup script on the VM:
+```bash
+# From your machine, copy the script:
+scp deploy/oracle-cloud-setup.sh ubuntu@<IP>:~
+
+# SSH into the VM:
+ssh ubuntu@<IP>
+chmod +x oracle-cloud-setup.sh
+./oracle-cloud-setup.sh
+```
+
+The server will run on port 443 with TLS. Configure the client:
+```bash
+export PW_SERVER=https://<IP>
+pw send ./my-project
+```
 
 ---
 
-## 3. Server Deployment
-
-After you share the VM's public IP, I will:
-1. Build the release binary
-2. Copy it to the VM via SCP
-3. Set up systemd service
-4. Configure TLS with Let's Encrypt
-5. Test the server
-
-The server will run as a systemd service and auto-start on reboot.
-
----
-
-## 4. Client Configuration
-
-After deployment, configure the CLI to use your server:
+## Client Configuration
 
 ```bash
-export PW_SERVER=https://your-server-ip:443
+export PW_SERVER=https://your-server-url:443
 pw send ./my-project
 ```
 

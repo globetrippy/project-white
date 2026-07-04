@@ -400,7 +400,7 @@ mod tests {
     fn test_packet_decode_incomplete_payload() {
         let mut buf = vec![0x05];
         buf.extend_from_slice(&(100u32).to_be_bytes());
-        buf.extend_from_slice(&vec![0; 50]);
+        buf.extend_from_slice(&[0; 50]);
         let result = Packet::decode(&buf);
         assert!(matches!(result, Err(ProtocolError::IncompletePacket)));
     }
