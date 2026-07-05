@@ -25,10 +25,10 @@ pub async fn receive_folder(
     let sm = SessionManager::new(server);
     let sender = sm.join_session(code, &public_key_b64, &local_addr).await?;
 
-    let _sender_pk_bytes = base64_decode_to_array(&sender.public_key)
-        .ok_or(ReceiveError::BadPublicKey)?;
+    let sender_fingerprint = compute_fingerprint(&sender.public_key);
 
-    println!("Sender public key: {}", &sender.public_key[..16]);
+    println!("Sender fingerprint: {}", sender_fingerprint);
+    println!("Verify this matches the sender's display.");
     println!("Waiting for sender to approve...");
 
     sm.wait_for_approval(code, timeout_secs).await?;
@@ -164,15 +164,9 @@ fn make_aad(ptype: PacketType, session_code: &str) -> Vec<u8> {
     aad
 }
 
-fn base64_decode_to_array(s: &str) -> Option<[u8; 32]> {
-    use base64::Engine;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(s).ok()?;
-    if bytes.len() != 32 {
-        return None;
-    }
-    let mut arr = [0u8; 32];
-    arr.copy_from_slice(&bytes);
-    Some(arr)
+fn compute_fingerprint(public_key_b64: &str) -> String {
+    let hash = blake3::hash(public_key_b64.as_bytes());
+    hex::encode_upper(&hash.as_bytes()[..4])
 }
 
 #[derive(Error, Debug)]
