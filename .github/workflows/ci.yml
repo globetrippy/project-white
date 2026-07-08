@@ -23,4 +23,6 @@ jobs:
       - run: cargo build --release --bin pw --bin pw-server
       - run: cargo test
       - run: cargo clippy --all-targets -- -D warnings
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
       - run: cargo audit
