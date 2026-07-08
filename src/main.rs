@@ -9,7 +9,10 @@ fn main() {
 
     let cli = Cli::parse();
 
-    let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("failed to create runtime");
 
     match &cli.command {
         project_white::cli::Command::Send {

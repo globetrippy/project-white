@@ -44,10 +44,11 @@ pub fn new_progress_bar(total: u64) -> ProgressBar {
     let pb = ProgressBar::new(total);
     pb.set_style(
         ProgressStyle::default_bar()
-            .template("{spinner:.green} [{bar:32.cyan/blue}] {bytes}/{total_bytes}  {msg}")
+            .template("[{bar:32}] {bytes}/{total_bytes}  {msg}")
             .expect("valid template")
-            .progress_chars("▓▓░"),
+            .progress_chars("##-"),
     );
+    pb.enable_steady_tick(Duration::from_millis(200));
     pb
 }
 
