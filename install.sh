@@ -3,8 +3,7 @@
 # Usage: curl -sSfL https://raw.githubusercontent.com/globetrippy/project-white/main/install.sh | sh
 set -eu
 
-SERVER="${PW_SERVER:-https://pw-server-gna4.onrender.com}"
-BINARY_NAME="pw"
+REPO="globetrippy/project-white"
 
 # ─── Platform Detection ──────────────────────────────────────────
 UNAME_S=$(uname -s)
@@ -14,8 +13,7 @@ case "$UNAME_S" in
   Linux)  OS="linux" ;;
   Darwin) OS="darwin" ;;
   *)
-    echo "error: unsupported OS ($UNAME_S). Project-White only supports Linux and macOS."
-    echo "       You can still build from source: cargo install project-white"
+    echo "error: unsupported OS ($UNAME_S). Only Linux and macOS are supported."
     exit 1
     ;;
 esac
@@ -29,24 +27,25 @@ case "$UNAME_M" in
     ;;
 esac
 
-BINARY="pw-$OS-$ARCH"
-DOWNLOAD_URL="$SERVER/download/$BINARY"
+BINARY_NAME="pw-$OS-$ARCH"
 
-# ─── Download ─────────────────────────────────────────────────────
-echo "  · Downloading Project-White for $OS/$ARCH..."
-echo "  · Server: $SERVER"
-
+# ─── Try pre-built binary from GitHub Releases ───────────────────
+DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/$BINARY_NAME"
 TMPFILE=$(mktemp /tmp/pw.XXXXXXXXXX)
 trap 'rm -f "$TMPFILE"' EXIT
 
+echo "  · Downloading Project-White for $OS/$ARCH..."
+
 HTTP_CODE=$(curl -sSfL -w '%{http_code}' -o "$TMPFILE" "$DOWNLOAD_URL" 2>/dev/null || echo "000")
 
-if [ "$HTTP_CODE" != "200" ]; then
-  echo "  · Pre-built binary not available, building from source..."
+if [ "$HTTP_CODE" = "200" ]; then
+  chmod +x "$TMPFILE"
+else
+  echo "  · Pre-built binary not available for $OS/$ARCH, building from source..."
   echo ""
 
   if ! command -v cargo >/dev/null 2>&1; then
-    echo "  ✗ Rust toolchain not found. Install it first:"
+    echo "  ✗ Rust toolchain not found. Install it first, then re-run:"
     echo "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
     exit 1
   fi
@@ -55,9 +54,9 @@ if [ "$HTTP_CODE" != "200" ]; then
   trap 'rm -rf "$TMPDIR"' EXIT
 
   echo "  · Cloning repo..."
-  git clone --depth 1 https://github.com/globetrippy/project-white.git "$TMPDIR" 2>/dev/null || {
+  git clone --depth 1 "https://github.com/$REPO.git" "$TMPDIR" 2>/dev/null || {
     echo "  ✗ Failed to clone. Try manually:"
-    echo "    git clone https://github.com/globetrippy/project-white.git && cd project-white && cargo build --release --bin pw"
+    echo "    git clone https://github.com/$REPO.git && cd project-white && cargo build --release --bin pw"
     exit 1
   }
 
@@ -65,10 +64,9 @@ if [ "$HTTP_CODE" != "200" ]; then
   echo "  · Building pw (release)..."
   cargo build --release --bin pw 2>&1
   cp target/release/pw "$TMPFILE"
+  chmod +x "$TMPFILE"
   echo ""
 fi
-
-chmod +x "$TMPFILE"
 
 # ─── Install ─────────────────────────────────────────────────────
 if [ -w /usr/local/bin ]; then

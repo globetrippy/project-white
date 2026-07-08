@@ -664,8 +664,7 @@ pw send [<path>]              Start as sender (default: cwd)
 pw receive                     Start as receiver
 pw receive [--in <path>]      Join existing session
 pw receive <code> [--in <path>]  Join session, save to directory
-pw update                     Update to latest version from server
-pw update [--server <url>]    Update from custom signaling server
+pw update                     Update to latest version from GitHub Releases
 pw --version                  Print version
 pw --help                     Print help
 ```

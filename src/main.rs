@@ -59,8 +59,8 @@ fn main() {
                 std::process::exit(1);
             }
         }
-        project_white::cli::Command::Update { server } => {
-            if let Err(e) = rt.block_on(project_white::update::update(server)) {
+        project_white::cli::Command::Update { .. } => {
+            if let Err(e) = rt.block_on(project_white::update::update()) {
                 eprintln!("error: {}", e);
                 std::process::exit(1);
             }

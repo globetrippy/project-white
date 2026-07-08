@@ -68,10 +68,6 @@ pub enum Command {
         output: PathBuf,
     },
 
-    /// Update pw to the latest version from the signaling server.
-    Update {
-        /// Signaling server URL to fetch the latest binary from.
-        #[arg(long, default_value = "https://pw.example.com", env = "PW_SERVER")]
-        server: String,
-    },
+    /// Update pw to the latest version from GitHub Releases.
+    Update {},
 }

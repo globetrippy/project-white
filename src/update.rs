@@ -1,5 +1,15 @@
 use thiserror::Error;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+fn release_url() -> String {
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+    format!(
+        "https://github.com/globetrippy/project-white/releases/latest/download/pw-{os}-{arch}"
+    )
+}
+
 #[derive(Error, Debug)]
 pub enum UpdateError {
     #[error("failed to locate current executable: {0}")]
@@ -21,24 +31,22 @@ const MACHO_MAGICS: &[[u8; 4]] = &[
     [0xca, 0xfe, 0xba, 0xbe],
 ];
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Download the latest `pw` binary from the signaling server and replace
+/// Download the latest `pw` binary from GitHub Releases and replace
 /// the currently running executable in-place.
-pub async fn update(server: &str) -> Result<(), UpdateError> {
+pub async fn update() -> Result<(), UpdateError> {
     let current_exe = std::env::current_exe().map_err(UpdateError::CurrentExe)?;
+    let url = release_url();
 
     println!(
         "  Current version: {}",
         console::Style::new().bold().apply_to(VERSION)
     );
     println!(
-        "  Server:          {}",
-        console::Style::new().dim().apply_to(server)
+        "  Downloading from: {}",
+        console::Style::new().dim().apply_to(&url)
     );
 
     // download
-    let url = format!("{}/download/pw", server.trim_end_matches('/'));
     let client = reqwest::Client::builder()
         .user_agent(concat!("pw/", env!("CARGO_PKG_VERSION")))
         .build()
