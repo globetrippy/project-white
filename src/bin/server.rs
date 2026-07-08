@@ -1,7 +1,12 @@
 use std::sync::Arc;
 use std::net::SocketAddr;
 
-use axum::Router;
+use axum::{
+    Router,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::get,
+};
 use tokio::sync::RwLock;
 use tracing_subscriber::EnvFilter;
 
@@ -33,15 +38,72 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", axum::routing::get(server::handlers::health))
+        // Install scripts (embedded at compile time)
+        .route("/install.sh", get(install_sh))
+        .route("/install.ps1", get(install_ps1))
+        // CLI binary download (served from the container filesystem)
+        .route("/download/*path", get(download_binary))
         .merge(server::router(store));
 
-    let addr: SocketAddr = std::env::var("PW_SERVER_ADDR")
-        .unwrap_or_else(|_| "0.0.0.0:8080".into())
-        .parse()
-        .expect("invalid PW_SERVER_ADDR");
+    let addr_str = std::env::var("PW_SERVER_ADDR")
+        .unwrap_or_else(|_| "0.0.0.0:8080".into());
+
+    let addr: SocketAddr = match addr_str.parse() {
+        Ok(a) => a,
+        Err(e) => {
+            eprintln!("error: invalid PW_SERVER_ADDR '{}' — {}", addr_str, e);
+            std::process::exit(1);
+        }
+    };
 
     tracing::info!("signaling server starting on {}", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("error: failed to bind to {} — {}", addr, e);
+            std::process::exit(1);
+        }
+    };
+
+    if let Err(e) = axum::serve(listener, app).await {
+        eprintln!("error: server stopped — {}", e);
+        std::process::exit(1);
+    }
+}
+
+// ─── Download & Install Handlers ────────────────────────────────
+
+/// Serve the Unix install script (embedded from project root).
+async fn install_sh() -> impl IntoResponse {
+    (
+        [("content-type", "text/x-shellscript")],
+        include_str!("../../install.sh"),
+    )
+}
+
+/// Serve the Windows install script (embedded from project root).
+async fn install_ps1() -> impl IntoResponse {
+    (
+        [("content-type", "text/powershell")],
+        include_str!("../../install.ps1"),
+    )
+}
+
+/// Serve the pre-built `pw` CLI binary.
+///
+/// In the Docker image, the `pw` binary is built alongside the server
+/// and placed at `/usr/local/bin/pw-cli`. This handler reads and serves it.
+async fn download_binary() -> Result<impl IntoResponse, StatusCode> {
+    let data = tokio::fs::read("/usr/local/bin/pw-cli")
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    Ok((
+        [
+            ("content-type", "application/octet-stream"),
+            ("content-disposition", "attachment; filename=\"pw\""),
+        ],
+        data,
+    ))
 }

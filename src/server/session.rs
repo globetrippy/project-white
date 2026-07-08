@@ -166,7 +166,10 @@ impl SessionStore {
     pub fn garbage_collect(&mut self) -> usize {
         let before = self.sessions.len();
         self.sessions.retain(|_, s| !s.is_expired());
-        before - self.sessions.len()
+        let removed = before - self.sessions.len();
+        // Clean up join_attempts for sessions that no longer exist.
+        self.join_attempts.retain(|code, _| self.sessions.contains_key(code));
+        removed
     }
 
     /// Session count (non-expired).

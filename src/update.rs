@@ -1,0 +1,104 @@
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum UpdateError {
+    #[error("failed to locate current executable: {0}")]
+    CurrentExe(std::io::Error),
+    #[error("failed to download update: {0}")]
+    Download(reqwest::Error),
+    #[error("downloaded file is not a valid {os} executable")]
+    NotValid { os: String },
+    #[error("failed to write update: {0}")]
+    Io(std::io::Error),
+}
+
+const ELF_MAGIC: [u8; 4] = [0x7f, b'E', b'L', b'F'];
+const MACHO_MAGICS: &[[u8; 4]] = &[
+    [0xfe, 0xed, 0xfa, 0xce],
+    [0xce, 0xfa, 0xed, 0xfe],
+    [0xfe, 0xed, 0xfa, 0xcf],
+    [0xcf, 0xfa, 0xed, 0xfe],
+    [0xca, 0xfe, 0xba, 0xbe],
+];
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Download the latest `pw` binary from the signaling server and replace
+/// the currently running executable in-place.
+pub async fn update(server: &str) -> Result<(), UpdateError> {
+    let current_exe = std::env::current_exe().map_err(UpdateError::CurrentExe)?;
+
+    println!(
+        "  Current version: {}",
+        console::Style::new().bold().apply_to(VERSION)
+    );
+    println!(
+        "  Server:          {}",
+        console::Style::new().dim().apply_to(server)
+    );
+
+    // download
+    let url = format!("{}/download/pw", server.trim_end_matches('/'));
+    let client = reqwest::Client::builder()
+        .user_agent(concat!("pw/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(UpdateError::Download)?;
+    let resp = client.get(&url).send().await.map_err(UpdateError::Download)?;
+    let status = resp.status();
+    if !status.is_success() {
+        eprintln!(
+            "  error: server returned {} {}",
+            status.as_u16(),
+            status.canonical_reason().unwrap_or("")
+        );
+        std::process::exit(1);
+    }
+    let bytes = resp.bytes().await.map_err(UpdateError::Download)?;
+
+    // verify
+    validate_binary(&bytes)?;
+
+    // write temp next to current exe
+    let temp_path = current_exe.with_extension("new");
+    tokio::fs::write(&temp_path, &bytes)
+        .await
+        .map_err(UpdateError::Io)?;
+
+    #[cfg(unix)]
+    {
+        let meta = std::fs::metadata(&current_exe).map_err(UpdateError::Io)?;
+        std::fs::set_permissions(&temp_path, meta.permissions()).map_err(UpdateError::Io)?;
+    }
+
+    // replace
+    std::fs::rename(&temp_path, &current_exe).map_err(UpdateError::Io)?;
+
+    println!(
+        "  {} Updated to latest version",
+        console::Style::new().green().apply_to("✔"),
+    );
+    println!("  Restart pw to use the new binary.");
+    Ok(())
+}
+
+fn validate_binary(bytes: &[u8]) -> Result<(), UpdateError> {
+    let header = bytes.get(..4).ok_or_else(|| UpdateError::NotValid {
+        os: std::env::consts::OS.to_string(),
+    })?;
+
+    let ok = if cfg!(target_os = "linux") {
+        header == ELF_MAGIC
+    } else if cfg!(target_os = "macos") {
+        // header is &[u8]; construct a [u8; 4] from the 4 bytes we verified exist
+        let h = [header[0], header[1], header[2], header[3]];
+        MACHO_MAGICS.contains(&h)
+    } else {
+        true
+    };
+    if !ok {
+        return Err(UpdateError::NotValid {
+            os: std::env::consts::OS.to_string(),
+        });
+    }
+    Ok(())
+}

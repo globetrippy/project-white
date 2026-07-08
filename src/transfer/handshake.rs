@@ -3,6 +3,10 @@ use tokio::net::TcpStream;
 use x25519_dalek::PublicKey;
 use thiserror::Error;
 
+/// Maximum allowed packet payload size (50 MB).
+/// Prevents memory-exhaustion attacks from crafted oversized packets.
+const MAX_PACKET_SIZE: usize = 50_000_000;
+
 use crate::crypto;
 use crate::protocol::{
     HandshakeAckPayload, HandshakeDonePayload, HandshakeInitPayload, Packet, PacketType,
@@ -112,8 +116,16 @@ pub async fn recv_packet(
             got: ptype,
         });
     }
+    let payload_len =
+        u32::from_be_bytes([header[1], header[2], header[3], header[4]]) as usize;
 
-    let payload_len = u32::from_be_bytes([header[1], header[2], header[3], header[4]]) as usize;
+    if payload_len > MAX_PACKET_SIZE {
+        return Err(HandshakeError::Protocol(format!(
+            "packet too large: {} bytes (max {})",
+            payload_len, MAX_PACKET_SIZE
+        )));
+    }
+
     let mut payload = vec![0u8; payload_len];
     if payload_len > 0 {
             stream

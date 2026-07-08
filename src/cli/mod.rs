@@ -63,8 +63,15 @@ pub enum Command {
         #[arg(long, default_value_t = 30, env = "PW_TIMEOUT")]
         timeout: u64,
 
-        /// Output directory for received files.
-        #[arg(long, default_value = ".", env = "PW_OUTPUT")]
+        /// Output directory for received files. Also available as `--in`.
+        #[arg(long, short, aliases = &["in"], default_value = ".", env = "PW_OUTPUT")]
         output: PathBuf,
+    },
+
+    /// Update pw to the latest version from the signaling server.
+    Update {
+        /// Signaling server URL to fetch the latest binary from.
+        #[arg(long, default_value = "https://pw.example.com", env = "PW_SERVER")]
+        server: String,
     },
 }

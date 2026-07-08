@@ -1,11 +1,7 @@
-/target
-.git
-.gitignore
+target/
+.git/
+*.md
 .DS_Store
-*.swp
-*.swo
-deploy/
-docs/
-adr/
-README.md
-LICENSE-MIT
+.dockerignore
+Dockerfile
+render.yaml

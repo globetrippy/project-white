@@ -32,6 +32,18 @@ impl SessionManager {
         }
     }
 
+    /// Validate session code format: exactly 8 alphanumeric characters.
+    /// This prevents URL path injection when the code is interpolated into
+    /// request URLs.
+    fn validate_code(code: &str) -> Result<(), SessionError> {
+        if code.len() != 8 || !code.chars().all(|c| c.is_ascii_alphanumeric()) {
+            return Err(SessionError::Api(
+                "invalid session code: must be 8 alphanumeric characters".into(),
+            ));
+        }
+        Ok(())
+    }
+
     pub async fn create_session(
         &self,
         public_key: &str,
@@ -71,6 +83,7 @@ impl SessionManager {
         public_key: &str,
         addr: &str,
     ) -> Result<PeerInfo, SessionError> {
+        Self::validate_code(code)?;
         let resp = self
             .client
             .post(format!("{}/api/v1/session/{}/join", self.server_url, code))
@@ -100,6 +113,7 @@ impl SessionManager {
     }
 
     pub async fn poll_session(&self, code: &str) -> Result<Option<PollResult>, SessionError> {
+        Self::validate_code(code)?;
         let resp = self
             .client
             .get(format!("{}/api/v1/session/{}/poll", self.server_url, code))
@@ -142,6 +156,7 @@ impl SessionManager {
     }
 
     pub async fn approve_session(&self, code: &str, sender_token: &str) -> Result<(), SessionError> {
+        Self::validate_code(code)?;
         let resp = self
             .client
             .post(format!(
@@ -163,6 +178,7 @@ impl SessionManager {
     }
 
     pub async fn delete_session(&self, code: &str) -> Result<(), SessionError> {
+        Self::validate_code(code)?;
         let resp = self
             .client
             .delete(format!("{}/api/v1/session/{}", self.server_url, code))
@@ -182,6 +198,7 @@ impl SessionManager {
         code: &str,
         timeout_secs: u64,
     ) -> Result<PollResult, SessionError> {
+        Self::validate_code(code)?;
         let start = std::time::Instant::now();
         loop {
             if start.elapsed().as_secs() > timeout_secs {
@@ -202,6 +219,7 @@ impl SessionManager {
         code: &str,
         timeout_secs: u64,
     ) -> Result<(), SessionError> {
+        Self::validate_code(code)?;
         let start = std::time::Instant::now();
         loop {
             if start.elapsed().as_secs() > timeout_secs {

@@ -1,0 +1,18 @@
+# Project-White — Render.com deployment config
+# Deploys the signaling server as a web service.
+# The CLI binary (`pw`) for linux-amd64 is built and served at /download.
+# Install it: curl -sSfL https://<your-service>.onrender.com/install.sh | sh
+
+services:
+  - type: web
+    name: pw-server
+    runtime: image
+    repo: https://github.com/globetrippy/project-white
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PW_SERVER_ADDR
+        value: 0.0.0.0:8080
+      - key: RUST_LOG
+        value: info
+    healthCheckPath: /health

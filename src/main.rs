@@ -2,6 +2,11 @@ use clap::Parser;
 use project_white::cli::Cli;
 
 fn main() {
+    // Best-effort memory locking (gracefully no-ops on unsupported platforms)
+    if let Err(e) = project_white::crypto::lock_memory() {
+        eprintln!("warning: memory locking failed — {}", e);
+    }
+
     let cli = Cli::parse();
 
     let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
@@ -50,6 +55,12 @@ fn main() {
                 *timeout,
                 output,
             )) {
+                eprintln!("error: {}", e);
+                std::process::exit(1);
+            }
+        }
+        project_white::cli::Command::Update { server } => {
+            if let Err(e) = rt.block_on(project_white::update::update(server)) {
                 eprintln!("error: {}", e);
                 std::process::exit(1);
             }

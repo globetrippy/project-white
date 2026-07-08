@@ -39,9 +39,13 @@ thiserror = "1"
 # File system
 walkdir = "2"
 
+# Terminal UI
+indicatif = "0.17"
+console = "0.15"
+
 # HTTP server (signaling server)
 axum = { version = "0.8", features = ["tokio"] }
-tower-http = { version = "0.6", features = ["cors"] }
+tower-http = { version = "0.6", features = ["cors", "fs"] }
 tower = "0.5"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

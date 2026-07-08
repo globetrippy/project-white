@@ -1,0 +1,4 @@
+[advisories]
+# number_prefix (transitive via indicatif) is unmaintained but has no known vulnerabilities.
+# Tracked at: https://github.com/console-rs/indicatif/issues/677
+ignore = ["RUSTSEC-2025-0119"]

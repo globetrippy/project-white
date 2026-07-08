@@ -50,7 +50,7 @@ pub struct SessionKeys {
 }
 
 impl SessionKeys {
-    fn new(encryption_key: [u8; 32], auth_key: [u8; 32]) -> Self {
+    pub const fn new(encryption_key: [u8; 32], auth_key: [u8; 32]) -> Self {
         Self {
             encryption_key,
             auth_key,
