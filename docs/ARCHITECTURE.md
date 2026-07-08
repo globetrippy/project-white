@@ -45,8 +45,29 @@ Project White is a secure peer-to-peer folder transfer tool designed for develop
 
 ```
 src/
-├── main.rs              Entry point
-├── cli/mod.rs           CLI argument parsing
-├── protocol/mod.rs      Packet types, TLV codec
-└── crypto/mod.rs        All cryptographic operations
+├── main.rs                  Entry point
+├── lib.rs                   Crate root, module declarations
+├── update.rs                Self-update (pw update)
+├── cli/
+│   └── mod.rs               CLI argument parsing
+├── crypto/
+│   └── mod.rs               Key exchange, AEAD, HKDF, BLAKE3
+├── protocol/
+│   └── mod.rs               Packet types, TLV codec, payload helpers
+├── server/
+│   ├── mod.rs               Axum router
+│   ├── codec.rs             Server TLV codec
+│   ├── handlers.rs          HTTP handlers (create/join/poll/approve/delete)
+│   └── session.rs           Session store with expiry GC
+├── transfer/
+│   ├── mod.rs               Module re-exports
+│   ├── handshake.rs         TCP handshake (sender + receiver)
+│   ├── manifest.rs          File manifest builder
+│   ├── receiver.rs          Receive folder logic
+│   ├── sender.rs            Send folder logic
+│   └── session_manager.rs   Signaling server API client
+├── ui/
+│   └── mod.rs               Terminal UI helpers (console + indicatif)
+└── bin/
+    └── server.rs            Server entry point
 ```
