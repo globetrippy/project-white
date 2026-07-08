@@ -1,6 +1,6 @@
 #!/bin/sh
 # Project-White — single-command installer
-# Usage: curl -sSfL https://pw-server-gna4.onrender.com/install.sh | sh
+# Usage: curl -sSfL https://raw.githubusercontent.com/globetrippy/project-white/main/install.sh | sh
 set -eu
 
 SERVER="${PW_SERVER:-https://pw-server-gna4.onrender.com}"
@@ -42,15 +42,30 @@ trap 'rm -f "$TMPFILE"' EXIT
 HTTP_CODE=$(curl -sSfL -w '%{http_code}' -o "$TMPFILE" "$DOWNLOAD_URL" 2>/dev/null || echo "000")
 
 if [ "$HTTP_CODE" != "200" ]; then
+  echo "  · Pre-built binary not available, building from source..."
   echo ""
-  echo "  ✗ Binary not available for $OS/$ARCH on this server yet."
-  echo "    Available platforms: linux-x86_64 (testing phase)"
+
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "  ✗ Rust toolchain not found. Install it first:"
+    echo "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+    exit 1
+  fi
+
+  TMPDIR=$(mktemp -d /tmp/pw-build.XXXXXXXXXX)
+  trap 'rm -rf "$TMPDIR"' EXIT
+
+  echo "  · Cloning repo..."
+  git clone --depth 1 https://github.com/globetrippy/project-white.git "$TMPDIR" 2>/dev/null || {
+    echo "  ✗ Failed to clone. Try manually:"
+    echo "    git clone https://github.com/globetrippy/project-white.git && cd project-white && cargo build --release --bin pw"
+    exit 1
+  }
+
+  cd "$TMPDIR"
+  echo "  · Building pw (release)..."
+  cargo build --release --bin pw 2>&1
+  cp target/release/pw "$TMPFILE"
   echo ""
-  echo "    To build from source:"
-  echo "      git clone https://github.com/globetrippy/project-white.git"
-  echo "      cd project-white && cargo build --release --bin pw"
-  echo "      sudo cp target/release/pw /usr/local/bin/"
-  exit 1
 fi
 
 chmod +x "$TMPFILE"
