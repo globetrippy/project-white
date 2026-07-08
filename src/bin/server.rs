@@ -3,7 +3,6 @@ use std::net::SocketAddr;
 
 use axum::{
     Router,
-    http::StatusCode,
     response::IntoResponse,
     routing::get,
 };
@@ -41,8 +40,6 @@ async fn main() {
         // Install scripts (embedded at compile time)
         .route("/install.sh", get(install_sh))
         .route("/install.ps1", get(install_ps1))
-        // CLI binary download (served from the container filesystem)
-        .route("/download/*path", get(download_binary))
         .merge(server::router(store));
 
     let addr_str = std::env::var("PW_SERVER_ADDR")
@@ -72,7 +69,7 @@ async fn main() {
     }
 }
 
-// ─── Download & Install Handlers ────────────────────────────────
+// ─── Install Script Handlers ────────────────────────────────────
 
 /// Serve the Unix install script (embedded from project root).
 async fn install_sh() -> impl IntoResponse {
@@ -88,22 +85,4 @@ async fn install_ps1() -> impl IntoResponse {
         [("content-type", "text/powershell")],
         include_str!("../../install.ps1"),
     )
-}
-
-/// Serve the pre-built `pw` CLI binary.
-///
-/// In the Docker image, the `pw` binary is built alongside the server
-/// and placed at `/usr/local/bin/pw-cli`. This handler reads and serves it.
-async fn download_binary() -> Result<impl IntoResponse, StatusCode> {
-    let data = tokio::fs::read("/usr/local/bin/pw-cli")
-        .await
-        .map_err(|_| StatusCode::NOT_FOUND)?;
-
-    Ok((
-        [
-            ("content-type", "application/octet-stream"),
-            ("content-disposition", "attachment; filename=\"pw\""),
-        ],
-        data,
-    ))
 }
