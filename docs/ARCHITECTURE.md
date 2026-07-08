@@ -4,22 +4,17 @@ Project White is a secure peer-to-peer folder transfer tool designed for develop
 
 ## Layers
 
-```
-┌─────────────┐
-│    CLI      │  Argument parsing, display, exit codes
-├─────────────┤
-│ Application │  Orchestration, logging, error mapping
-├─────────────┤
-│  Session    │  Session lifecycle, state machine, server communication
-├─────────────┤
-│  Transfer   │  File chunking, sequencing, ACK/retry, reassembly
-├─────────────┤
-│  Security   │  X25519, AEAD, HKDF, BLAKE3, key management
-├─────────────┤
-│ Networking  │  TCP sockets, NAT traversal, connection lifecycle
-├─────────────┤
-│     OS      │
-└─────────────┘
+```text
+╭────────────────────── Architecture Layers ────────────────────────╮
+│                                                                   │
+│  CLI                          Argument parsing, display           │
+│  Application                  Orchestration, logging              │
+│  Session                      Lifecycle, state machine            │
+│  Transfer                     Chunking, ACK/retry, reassembly     │
+│  Security                     X25519, AEAD, HKDF, BLAKE3          │
+│  Networking                   TCP sockets, NAT traversal          │
+│                                                                   │
+╰───────────────────────────────────────────────────────────────────╯
 ```
 
 ## Constraints
