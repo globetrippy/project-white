@@ -49,7 +49,7 @@ fn main() {
             server,
             chunk_size,
             timeout,
-            output,
+            r#in: output,
         } => {
             if let Err(e) = rt.block_on(project_white::transfer::receiver::receive_folder(
                 server,

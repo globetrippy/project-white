@@ -63,9 +63,9 @@ pub enum Command {
         #[arg(long, default_value_t = 30, env = "PW_TIMEOUT")]
         timeout: u64,
 
-        /// Output directory for received files. Also available as `--in`.
-        #[arg(long, short, aliases = &["in"], default_value = ".", env = "PW_OUTPUT")]
-        output: PathBuf,
+        /// Output directory for received files.
+        #[arg(long, short = 'i', default_value = ".", env = "PW_IN")]
+        r#in: PathBuf,
     },
 
     /// Update pw to the latest version from GitHub Releases.
